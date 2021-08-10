@@ -440,7 +440,7 @@ class SnowflakeTarget(SQLInterface):
             bucket, key = self.s3.persist(csv_rows,
                                           key_prefix=temp_table_name + SEPARATOR)
             if self.external_stage:
-                stage_location = f"@{self.external_stage}"
+                stage_location = f"@{self.external_stage}/{key}"
             else:
                 stage_location = "'s3://{bucket}/{key}' credentials=(AWS_KEY_ID=%s AWS_SECRET_KEY=%s)".format(
                     bucket=bucket,
