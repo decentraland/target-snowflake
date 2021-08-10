@@ -33,7 +33,7 @@ class SnowflakeTarget(SQLInterface):
     CREATE_TABLE_INITIAL_COLUMN = '_SDC_TARGET_SNOWFLAKE_CREATE_TABLE_PLACEHOLDER'
     CREATE_TABLE_INITIAL_COLUMN_TYPE = 'BOOLEAN'
 
-    def __init__(self, connection, *args, s3=None, logging_level=None, persist_empty_tables=False, **kwargs):
+    def __init__(self, connection, *args, s3=None, logging_level=None, persist_empty_tables=False, external_stage=None, **kwargs):
         self.LOGGER.info('SnowflakeTarget created. Connected to WAREHOUSE: `{}` DB: `{}` SCHEMA: `{}`'.format(
             connection.configured_warehouse,
             connection.configured_database,
@@ -52,6 +52,7 @@ class SnowflakeTarget(SQLInterface):
 
         self.connection = connection
         self.s3 = s3
+        self.external_stage = external_stage
         self.persist_empty_tables = persist_empty_tables
         if self.persist_empty_tables:
             self.LOGGER.debug('SnowflakeTarget is persisting empty tables')
@@ -438,11 +439,14 @@ class SnowflakeTarget(SQLInterface):
         if self.s3:
             bucket, key = self.s3.persist(csv_rows,
                                           key_prefix=temp_table_name + SEPARATOR)
-            stage_location = "'s3://{bucket}/{key}' credentials=(AWS_KEY_ID=%s AWS_SECRET_KEY=%s)".format(
-                bucket=bucket,
-                key=key)
-            params = [self.s3.credentials()['aws_access_key_id'],
-                      self.s3.credentials()['aws_secret_access_key']]
+            if self.external_stage:
+                stage_location = f"@{self.external_stage}"
+            else:
+                stage_location = "'s3://{bucket}/{key}' credentials=(AWS_KEY_ID=%s AWS_SECRET_KEY=%s)".format(
+                    bucket=bucket,
+                    key=key)
+                params = [self.s3.credentials()['aws_access_key_id'],
+                        self.s3.credentials()['aws_secret_access_key']]
         else:
             stage_location = '@{db}.{schema}.%{table}'.format(
                 db=sql.identifier(self.connection.configured_database),

@@ -42,7 +42,8 @@ def main(config, input_stream=None):
             connection,
             s3=s3,
             logging_level=config.get('logging_level'),
-            persist_empty_tables=config.get('persist_empty_tables')
+            persist_empty_tables=config.get('persist_empty_tables'),
+            external_stage=config.get('external_stage')
         )
 
         if input_stream:
